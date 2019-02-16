@@ -29,11 +29,12 @@ public:
 	Window(const Window&) = delete;
 	Window& operator=(const Window&) = delete;
 
-public:
-	void Show();
+	HWND& GetHandle() { return hWnd; }
 
 private:
 	static LRESULT CALLBACK HandelMsgSetUp(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static LRESULT CALLBACK HandelMsgThunk(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT HandelMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 private:
 	size_t width;

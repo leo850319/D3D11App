@@ -13,7 +13,7 @@ Window::WindowClass::WindowClass() : hInstance(GetModuleHandle(nullptr))
 	wcStruct.hInstance = hInstance;
 	wcStruct.hIcon = nullptr;
 	wcStruct.hCursor = nullptr;
-	wcStruct.hbrBackground = CreateSolidBrush(COLOR_WINDOW);
+	wcStruct.hbrBackground = nullptr;
 	wcStruct.lpszMenuName = nullptr;
 	wcStruct.lpszClassName = className;
 	wcStruct.hIconSm = nullptr;
@@ -43,6 +43,8 @@ Window::Window(size_t width, size_t height, LPCSTR wndName) : width(width), heig
 					CW_USEDEFAULT, rt.right - rt.left,
 					rt.bottom - rt.top, nullptr, nullptr,
 					WindowClass::GetInstance(), this);
+
+	ShowWindow(hWnd, SW_SHOWDEFAULT);
 }
 
 Window::~Window()
@@ -50,7 +52,36 @@ Window::~Window()
 	DestroyWindow(hWnd);
 }
 
-void Window::Show()
+LRESULT Window::HandelMsgSetUp(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	ShowWindow(hWnd, SW_SHOWDEFAULT);
+	if(uMsg == WM_NCCREATE)
+	{
+		CREATESTRUCT* cs = reinterpret_cast<CREATESTRUCT*>(lParam);
+		Window* pWindow = reinterpret_cast<Window*>(cs->lpCreateParams);
+		
+		SetWindowLong(hWnd, GWL_USERDATA, reinterpret_cast<LONG_PTR>(pWindow));
+		SetWindowLong(hWnd, GWL_WNDPROC, reinterpret_cast<LONG_PTR>(pWindow->HandelMsgThunk));
+
+		return pWindow->HandelMsg(hWnd, uMsg, wParam, lParam);
+	}
+
+	return DefWindowProc(hWnd, uMsg, wParam, lParam);
+}
+
+LRESULT Window::HandelMsgThunk(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	Window* pWindow = reinterpret_cast<Window*>(GetWindowLong(hWnd, GWL_USERDATA));
+
+	return pWindow->HandelMsg(hWnd, uMsg, wParam, lParam);
+}
+
+LRESULT Window::HandelMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch (uMsg)
+	{
+	case WM_CLOSE:
+		PostQuitMessage(0);
+		return 0;
+	}
+	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
